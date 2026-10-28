@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boîte D'Art — We Don't Just Design | We Drive Impact</title>
+  
+  <!-- Fonts: Syne (Headings), Plus Jakarta Sans (Body), JetBrains Mono (Tech/Accent) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#070709',
+              dark: '#0e0e13',
+              card: 'rgba(18, 18, 24, 0.72)',
+              border: 'rgba(255, 255, 255, 0.09)',
+              amber: '#FF7A29', // Tangerine / Gold highlight from brand
+              violet: '#8B5CF6',
+              cyan: '#06B6D4',
+              muted: '#94A3B8'
+            }
+          },
+          fontFamily: {
+            syne: ['Syne', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'glow-amber': '0 0 35px -5px rgba(255, 122, 41, 0.35)',
+            'glow-violet': '0 0 35px -5px rgba(139, 92, 246, 0.35)',
+            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js & Lucide CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #070709;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #272733;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #FF7A29;
+    }
+
+    /* Backdrop blur fallback */
+    .glassmorphic {
+      background: rgba(14, 14, 19, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glassmorphic-card {
+      background: linear-gradient(135deg, rgba(25, 25, 35, 0.55) 0%, rgba(12, 12, 17, 0.8) 100%);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glassmorphic-card:hover {
+      border-color: rgba(255, 122, 41, 0.45);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px -15px rgba(255, 122, 41, 0.2);
+    }
+
+    /* Gradient Text */
+    .text-gradient {
+      background: linear-gradient(135deg, #FFFFFF 30%, #A1A1AA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-amber {
+      background: linear-gradient(135deg, #FFA959 0%, #FF6525 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Fixed WebGL Canvas Behind Content */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none; /* Mouse coordinates passed via window listener */
+    }
+
+    /* Floating wireframe prisms from video */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-15px) rotate(4deg); }
+    }
+    .ambient-float {
+      animation: floatSlow 8s ease-in-out infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-[#070709] text-white font-sans antialiased overflow-x-hidden selection:bg-[#FF7A29] selection:text-black">
+
+  <!-- 3D WebGL Canvas Layer (Fixed) -->
+  <div id="canvas-container">
+    <canvas id="webgl-canvas" class="w-full h-full block"></canvas>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="fixed top-0 left-0 right-0 z-50 px-4 md:px-10 py-4 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto flex items-center justify-between glassmorphic rounded-full px-6 py-3.5 shadow-glass">
+      
+      <!-- Brand Logo / Monogram -->
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FF7A29] to-[#8B5CF6] p-[2px] transition-transform duration-300 group-hover:scale-105">
+          <div class="w-full h-full bg-[#070709] rounded-full flex items-center justify-center font-syne font-black text-sm tracking-tighter">
+            B<span class="text-[#FF7A29]">A</span>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-syne font-bold text-base tracking-wide uppercase text-white group-hover:text-[#FF7A29] transition-colors">Boîte D'Art</span>
+          <span class="font-mono text-[9px] text-zinc-400 -mt-1 tracking-wider uppercase">Nairobi • #designhub</span>
+        </div>
+      </a>
+
+      <!-- Desktop Links -->
+      <nav class="hidden md:flex items-center gap-8 text-xs font-mono tracking-widest uppercase text-zinc-400">
+        <a href="#manifesto" class="hover:text-white transition-colors">Manifesto</a>
+        <a href="#services" class="hover:text-white transition-colors">Pillars</a>
+        <a href="#portfolio" class="hover:text-white transition-colors">Selected Work</a>
+        <a href="#studio" class="hover:text-white transition-colors">Studio</a>
+      </nav>
+
+      <!-- Action Pill / Request CTA -->
+      <div class="flex items-center gap-3">
+        <a href="https://instagram.com/boite_d.arte" target="_blank" rel="noopener noreferrer" class="hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-all text-xs" title="Instagram @boite_d.arte">
+          <i class="fa-brands fa-instagram text-sm"></i>
+        </a>
+        <button onclick="toggleInquiryModal(true)" class="relative group overflow-hidden px-5 py-2.5 rounded-full bg-[#8B5CF6] hover:bg-[#7c47eb] text-white text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-glow-violet active:scale-95 flex items-center gap-2">
+          <span>Request Access</span>
+          <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- CONTENT OVERLAY WRAPPER -->
+  <main class="relative z-10">
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="min-h-screen flex flex-col justify-center items-start px-6 md:px-16 lg:px-24 max-w-7xl mx-auto pt-28 pb-16">
+      
+      <!-- Studio Tagline Badge -->
+      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full glassmorphic border-white/10 text-[11px] font-mono uppercase tracking-widest text-zinc-300 mb-6">
+        <span class="w-2 h-2 rounded-full bg-[#FF7A29] animate-pulse"></span>
+        Digital Creator • Branding & Visuals • Nairobi
+      </div>
+
+      <!-- Main Impact Headline -->
+      <h1 class="font-syne font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight leading-[1.05] max-w-4xl text-gradient mb-6">
+        We don't just design.<br>
+        <span class="text-gradient-amber">We drive impact.</span>
+      </h1>
+
+      <p class="font-sans text-base sm:text-lg md:text-xl text-zinc-300 max-w-xl font-light leading-relaxed mb-8">
+        Plug into creative momentum. We craft high-octane branding, 3D visual environments, and digital campaigns for audacious brands ready to command their industry.
+      </p>
+
+      <!-- CTA Buttons & Stats -->
+      <div class="flex flex-wrap items-center gap-4 mb-16">
+        <button onclick="toggleInquiryModal(true)" class="px-8 py-4 rounded-full bg-gradient-to-r from-[#FF7A29] to-[#FF5500] hover:from-[#ff883d] hover:to-[#ff6314] text-black font-syne font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-glow-amber active:scale-95 flex items-center gap-3">
+          <span>Start Collaboration</span>
+          <i class="fa-solid fa-bolt"></i>
+        </button>
+        <a href="#services" class="px-8 py-4 rounded-full glassmorphic hover:bg-white/10 text-white font-mono text-xs uppercase tracking-wider transition-all duration-300 border border-white/10">
+          Explore System
+        </a>
+      </div>
+
+      <!-- Scroll Indicator & Particle Stage HUD -->
+      <div class="flex items-center gap-6 text-xs font-mono text-zinc-400">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-cube text-[#FF7A29]"></i>
+          <span>STAGE: <strong id="hud-stage-name" class="text-white">THE ART BOX (CUBE)</strong></span>
+        </div>
+        <div class="hidden sm:block text-zinc-600">|</div>
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="animate-bounce"><i class="fa-solid fa-chevron-down text-zinc-400"></i></span>
+          <span>SCROLL TO MORPH SIMULATION</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 2: THE MANIFESTO (CHAOS / EXPLOSION) -->
+    <section id="manifesto" class="min-h-screen flex items-center px-6 md:px-16 lg:px-24 max-w-7xl mx-auto py-24">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <div class="lg:col-span-8 space-y-6">
+          <div class="font-mono text-xs text-[#FF7A29] uppercase tracking-widest flex items-center gap-2">
+            <span>// 01. The Problem Space</span>
+          </div>
+          <h2 class="font-syne font-bold text-3xl sm:text-5xl md:text-6xl text-white leading-tight">
+            This is your marketplace today: endless visual noise, diluted identities, and forgettable templates.
+          </h2>
+          <p class="text-zinc-300 text-lg leading-relaxed max-w-2xl font-light">
+            In an ocean of commoditized AI graphics and lifeless cookie-cutter templates, your voice drowns. 80% of consumer choices are decided in milliseconds by visual gravity. Settling for average is the most expensive mistake a growing brand can make.
+          </p>
+          <div class="p-6 rounded-2xl glassmorphic border-white/10 max-w-xl">
+            <p class="font-mono text-sm text-[#8B5CF6] mb-2 font-semibold">THE BOÎTE D'ART PHILOSOPHY:</p>
+            <p class="text-zinc-300 text-sm italic">
+              "We assemble unvarnished strategy with razor-sharp creative conviction. We don't make decorations; we engineer visual capital."
+            </p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <div class="glassmorphic-card p-6 rounded-2xl">
+            <span class="font-mono text-2xl font-bold text-[#FF7A29]">100%</span>
+            <p class="text-sm font-semibold text-white mt-1">Custom Visual Systems</p>
+            <p class="text-xs text-zinc-400 mt-2">Zero stock presets. Bespoke typography, bespoke 3D assets, crafted pixel-by-pixel.</p>
+          </div>
+          <div class="glassmorphic-card p-6 rounded-2xl">
+            <span class="font-mono text-2xl font-bold text-[#8B5CF6]">⚡ Impact Driven</span>
+            <p class="text-sm font-semibold text-white mt-1">Metrics Over Aesthetics</p>
+            <p class="text-xs text-zinc-400 mt-2">Engineered to drive direct conversions, brand recall, and market prestige.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: SERVICES MATRIX (BENTO GRID - LIGHTBULB / INSIGHT STATE) -->
+    <section id="services" class="min-h-screen flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-7xl mx-auto py-24">
+      
+      <div class="text-center md:text-left mb-16">
+        <span class="font-mono text-xs text-[#8B5CF6] uppercase tracking-widest">// 02. Core Capabilities</span>
+        <h2 class="font-syne font-extrabold text-3xl sm:text-5xl md:text-6xl text-white mt-2">
+          Spark lightbulb moments.
+        </h2>
+        <p class="text-zinc-300 text-base max-w-xl mt-3 font-light">
+          Three specialized disciplines engineered under one creative house in Nairobi.
+        </p>
+      </div>
+
+      <!-- Bento Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Pillar 1: Bold Branding -->
+        <div class="glassmorphic-card p-8 rounded-3xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-[#FF7A29]/15 border border-[#FF7A29]/30 flex items-center justify-center text-[#FF7A29] text-xl mb-6 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-fingerprint"></i>
+            </div>
+            <span class="font-mono text-xs uppercase tracking-wider text-[#FF7A29]">Pillar 01</span>
+            <h3 class="font-syne font-bold text-2xl text-white mt-1 mb-3">Bold Branding</h3>
+            <p class="text-zinc-300 text-sm leading-relaxed">
+              Complete brand architectures, provocative logomarks, typography rules, packaging, and high-fashion merchandise collateral built to withstand trends.
+            </p>
+          </div>
+          <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between font-mono text-xs text-zinc-400">
+            <span>Identity • Strategy • Print</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[#FF7A29]"></i>
+          </div>
+        </div>
+
+        <!-- Pillar 2: Striking Visuals -->
+        <div class="glassmorphic-card p-8 rounded-3xl flex flex-col justify-between group md:border-[#8B5CF6]/30 bg-gradient-to-b from-[#8B5CF6]/10 to-transparent">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6] text-xl mb-6 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-cubes-stacked"></i>
+            </div>
+            <span class="font-mono text-xs uppercase tracking-wider text-[#8B5CF6]">Pillar 02</span>
+            <h3 class="font-syne font-bold text-2xl text-white mt-1 mb-3">Striking Visuals</h3>
+            <p class="text-zinc-300 text-sm leading-relaxed">
+              Photorealistic 3D simulations, procedural fluid dynamics, motion graphics, and surreal CGI assets that captivate eyeballs on mobile feeds.
+            </p>
+          </div>
+          <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between font-mono text-xs text-zinc-400">
+            <span>3D CGI • Motion • Art Direction</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[#8B5CF6]"></i>
+          </div>
+        </div>
+
+        <!-- Pillar 3: Tech & Digital Campaigns -->
+        <div class="glassmorphic-card p-8 rounded-3xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-[#06B6D4]/15 border border-[#06B6D4]/30 flex items-center justify-center text-[#06B6D4] text-xl mb-6 group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-code"></i>
+            </div>
+            <span class="font-mono text-xs uppercase tracking-wider text-[#06B6D4]">Pillar 03</span>
+            <h3 class="font-syne font-bold text-2xl text-white mt-1 mb-3">Tech & Campaigns</h3>
+            <p class="text-zinc-300 text-sm leading-relaxed">
+              Developer culture crossover, tech-forward product launches, high-conversion online ad series, and community-driven social engagement formats.
+            </p>
+          </div>
+          <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between font-mono text-xs text-zinc-400">
+            <span>Growth Ads • Tech Hub • Merch</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[#06B6D4]"></i>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- SECTION 4: SELECTED WORK (INTERACTIVE SHOWCASE) -->
+    <section id="portfolio" class="min-h-screen flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-7xl mx-auto py-24">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+        <div>
+          <span class="font-mono text-xs text-[#FF7A29] uppercase tracking-widest">// 03. Selected Portfolio</span>
+          <h2 class="font-syne font-black text-3xl sm:text-5xl text-white mt-2">
+            Inside the Box of Art.
+          </h2>
+        </div>
+        
+        <!-- Controls for Carousel -->
+        <div class="flex items-center gap-3 mt-6 md:mt-0">
+          <button id="slider-prev" class="w-11 h-11 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 hover:bg-[#8B5CF6] text-white flex items-center justify-center transition-all duration-300 active:scale-95">
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </button>
+          <button id="slider-next" class="w-11 h-11 rounded-full bg-[#8B5CF6] hover:bg-[#7c47eb] text-white flex items-center justify-center transition-all duration-300 active:scale-95 shadow-glow-violet">
+            <i class="fa-solid fa-arrow-right text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Portfolio Carousel Track -->
+      <div class="relative overflow-hidden rounded-3xl">
+        <div id="slider-track" class="flex transition-transform duration-500 ease-out gap-6">
+          
+          <!-- Case 1 -->
+          <div class="min-w-full md:min-w-[48%] lg:min-w-[32%] glassmorphic-card p-6 rounded-3xl flex flex-col">
+            <div class="w-full h-56 rounded-2xl bg-zinc-900 border border-white/10 relative overflow-hidden mb-5 group">
+              <!-- Geometric Mock Art representing 3D fluid mesh -->
+              <div class="absolute inset-0 bg-gradient-to-tr from-[#06B6D4]/30 via-black to-[#8B5CF6]/40 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+                <i class="fa-solid fa-circle-notch text-6xl text-[#06B6D4] opacity-50 animate-spin" style="animation-duration: 20s;"></i>
+              </div>
+              <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-[#06B6D4]">3D ART</span>
+            </div>
+            <span class="font-mono text-xs text-zinc-400">PROCEDURAL VORTEX</span>
+            <h4 class="font-syne font-bold text-xl text-white mt-1">Liquid Geometry 01</h4>
+            <p class="text-zinc-300 text-xs mt-2 leading-relaxed">
+              Generative iridescent fluid sim developed for an East African fintech visual rebranding campaign.
+            </p>
+          </div>
+
+          <!-- Case 2 -->
+          <div class="min-w-full md:min-w-[48%] lg:min-w-[32%] glassmorphic-card p-6 rounded-3xl flex flex-col">
+            <div class="w-full h-56 rounded-2xl bg-zinc-900 border border-white/10 relative overflow-hidden mb-5 group">
+              <div class="absolute inset-0 bg-gradient-to-br from-[#FF7A29]/30 via-zinc-900 to-black group-hover:scale-105 transition-transform duration-500 flex flex-col items-center justify-center p-6 text-center">
+                <span class="font-syne font-black text-2xl text-white tracking-widest uppercase">BOX OF ART</span>
+                <span class="font-mono text-xs text-[#FF7A29] mt-2">MERCH & COLLATERAL</span>
+              </div>
+              <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-[#FF7A29]">IDENTITY</span>
+            </div>
+            <span class="font-mono text-xs text-zinc-400">BRAND SYSTEM</span>
+            <h4 class="font-syne font-bold text-xl text-white mt-1">Boîte D'Art Merchandise</h4>
+            <p class="text-zinc-300 text-xs mt-2 leading-relaxed">
+              Custom lanyards, tactile stationery, and branded unboxing kit celebrating modern Nairobi creative hustle.
+            </p>
+          </div>
+
+          <!-- Case 3 -->
+          <div class="min-w-full md:min-w-[48%] lg:min-w-[32%] glassmorphic-card p-6 rounded-3xl flex flex-col">
+            <div class="w-full h-56 rounded-2xl bg-zinc-900 border border-white/10 relative overflow-hidden mb-5 group">
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-zinc-900 to-[#8B5CF6]/20 group-hover:scale-105 transition-transform duration-500 p-6 flex flex-col justify-end font-mono">
+                <div class="text-[11px] text-zinc-400 leading-snug">
+                  <span class="text-[#8B5CF6]">def</span> <span class="text-emerald-400">drive_impact</span>():<br>
+                  &nbsp;&nbsp;brand.elevate()<br>
+                  &nbsp;&nbsp;return <span class="text-amber-300">"unmatched"</span>
+                </div>
+              </div>
+              <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-violet-400">TECH CAMPAIGN</span>
+            </div>
+            <span class="font-mono text-xs text-zinc-400">DEV SOCIAL SERIES</span>
+            <h4 class="font-syne font-bold text-xl text-white mt-1">Programmer Motivations</h4>
+            <p class="text-zinc-300 text-xs mt-2 leading-relaxed">
+              Viral engineering lifestyle series bridging tech culture with refined creative editorial direction.
+            </p>
+          </div>
+
+          <!-- Case 4 -->
+          <div class="min-w-full md:min-w-[48%] lg:min-w-[32%] glassmorphic-card p-6 rounded-3xl flex flex-col">
+            <div class="w-full h-56 rounded-2xl bg-zinc-900 border border-white/10 relative overflow-hidden mb-5 group">
+              <div class="absolute inset-0 bg-gradient-to-tr from-amber-600/30 via-black to-emerald-500/20 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+                <i class="fa-solid fa-microphone-lines text-5xl text-zinc-300"></i>
+              </div>
+              <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono text-amber-400">AUDIO & BROADCAST</span>
+            </div>
+            <span class="font-mono text-xs text-zinc-400">STUDIO CAMPAIGNS</span>
+            <h4 class="font-syne font-bold text-xl text-white mt-1">Audio Storytelling Hub</h4>
+            <p class="text-zinc-300 text-xs mt-2 leading-relaxed">
+              Podcast cover art and motion audio wave assets for Nairobi’s foremost cultural and tech dialogs.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 5: STUDIO & GLOBAL IMPACT (SPHERE MORPH STATE) -->
+    <section id="studio" class="min-h-screen flex items-center px-6 md:px-16 lg:px-24 max-w-7xl mx-auto py-24">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full">
+        
+        <div>
+          <span class="font-mono text-xs text-[#06B6D4] uppercase tracking-widest">// 04. Nairobi Roots, Global Impact</span>
+          <h2 class="font-syne font-extrabold text-3xl sm:text-5xl text-white mt-2 leading-tight">
+            Build a better world of work.
+          </h2>
+          <p class="text-zinc-300 text-base leading-relaxed mt-4 font-light">
+            Headquartered in Nairobi, Boîte D'Art represents a generation of fearless African creators. We partner with founders, venture-backed tech startups, and ambitious cultural brands across Nairobi, London, Berlin, and San Francisco.
+          </p>
+
+          <div class="mt-8 space-y-4">
+            <div class="flex items-start gap-4 p-4 rounded-2xl glassmorphic border-white/5">
+              <div class="w-10 h-10 rounded-xl bg-[#FF7A29]/20 text-[#FF7A29] flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div>
+                <h5 class="text-sm font-bold text-white">Nairobi Creative Ecosystem</h5>
+                <p class="text-xs text-zinc-400 mt-0.5">Infusing high-contrast African dynamism with international Swiss precision.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 p-4 rounded-2xl glassmorphic border-white/5">
+              <div class="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 text-[#8B5CF6] flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div>
+                <h5 class="text-sm font-bold text-white">End-to-End Creative Direction</h5>
+                <p class="text-xs text-zinc-400 mt-0.5">From seed concept and mood boards to high-res master exports and social rollout.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Studio Metric Board -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="glassmorphic-card p-6 rounded-3xl text-center">
+            <span class="font-syne font-black text-4xl text-[#FF7A29]">500+</span>
+            <p class="font-mono text-xs text-zinc-400 uppercase mt-2">Community Growth</p>
+          </div>
+          <div class="glassmorphic-card p-6 rounded-3xl text-center">
+            <span class="font-syne font-black text-4xl text-[#8B5CF6]">100%</span>
+            <p class="font-mono text-xs text-zinc-400 uppercase mt-2">Bespoke Design</p>
+          </div>
+          <div class="glassmorphic-card p-6 rounded-3xl text-center">
+            <span class="font-syne font-black text-4xl text-[#06B6D4]">3D/CGI</span>
+            <p class="font-mono text-xs text-zinc-400 uppercase mt-2">Procedural Pipeline</p>
+          </div>
+          <div class="glassmorphic-card p-6 rounded-3xl text-center">
+            <span class="font-syne font-black text-4xl text-white">24/7</span>
+            <p class="font-mono text-xs text-zinc-400 uppercase mt-2">Direct Collaboration</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 6: FINAL CTA (GATEWAY STATE) -->
+    <section class="min-h-[80vh] flex flex-col justify-center items-center text-center px-6 md:px-16 max-w-5xl mx-auto py-24">
+      
+      <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-[#FF7A29] to-[#8B5CF6] p-[2px] mb-8 shadow-glow-amber">
+        <div class="w-full h-full bg-[#070709] rounded-full flex items-center justify-center font-syne font-black text-xl text-white">
+          BA
+        </div>
+      </div>
+
+      <h2 class="font-syne font-extrabold text-4xl sm:text-6xl md:text-7xl text-white tracking-tight leading-tight mb-6">
+        Your brand has the story.<br>
+        <span class="text-gradient-amber">Ask Boîte D'Art to build it.</span>
+      </h2>
+
+      <p class="text-zinc-300 text-base md:text-lg max-w-xl mb-10 font-light">
+        Skip generic agencies and slow turnarounds. Get in touch directly to explore brand sprints, 3D visual campaigns, and digital partnerships.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <!-- Direct WhatsApp Collaboration Button -->
+        <a href="https://wa.me/254700000000?text=Hi%20Boîte%20D'Art,%20I'd%20like%20to%20collaborate%20on%20a%20project." target="_blank" class="px-8 py-4 rounded-full bg-[#8B5CF6] hover:bg-[#7c47eb] text-white font-syne font-bold text-sm uppercase tracking-wider transition-all duration-300 shadow-glow-violet active:scale-95 flex items-center gap-3">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Direct WhatsApp DM</span>
+        </a>
+
+        <!-- Instagram Profile Link -->
+        <a href="https://instagram.com/boite_d.arte" target="_blank" rel="noopener noreferrer" class="px-8 py-4 rounded-full glassmorphic hover:bg-white/10 text-white font-syne font-bold text-sm uppercase tracking-wider transition-all duration-300 border border-white/10 flex items-center gap-3">
+          <i class="fa-brands fa-instagram text-lg text-[#FF7A29]"></i>
+          <span>@boite_d.arte</span>
+        </a>
+      </div>
+
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-white/10 py-12 px-6 md:px-16 text-xs font-mono text-zinc-400">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span>© 2026 Boîte D'Art Studio Ltd. All rights reserved. Nairobi, Kenya.</span>
+        </div>
+        <div class="flex items-center gap-6">
+          <a href="#manifesto" class="hover:text-white transition-colors">MANIFESTO</a>
+          <a href="#services" class="hover:text-white transition-colors">SERVICES</a>
+          <a href="https://instagram.com/boite_d.arte" target="_blank" class="hover:text-white transition-colors">INSTAGRAM</a>
+          <span class="text-[#FF7A29]">#DESIGNHUB</span>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- INTERACTIVE INQUIRY MODAL (DRAWER) -->
+  <div id="inquiry-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center p-4">
+    <div class="w-full max-w-lg glassmorphic-card p-8 rounded-3xl border border-white/20 shadow-2xl relative transform scale-95 transition-transform duration-300" id="inquiry-modal-card">
+      
+      <!-- Close button -->
+      <button onclick="toggleInquiryModal(false)" class="absolute top-6 right-6 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-400 hover:text-white flex items-center justify-center transition-all">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-[#FF7A29] flex items-center justify-center font-syne font-bold text-xs text-black">
+          BA
+        </div>
+        <span class="font-mono text-xs uppercase tracking-wider text-[#FF7A29]">Start A Project</span>
+      </div>
+
+      <h3 class="font-syne font-extrabold text-2xl text-white mb-2">Unbox your next vision.</h3>
+      <p class="text-zinc-300 text-xs mb-6 font-light">Tell us what you're building. We review briefs within 24 hours.</p>
+
+      <form id="project-form" onsubmit="handleInquirySubmit(event)" class="space-y-4">
+        <div>
+          <label class="block font-mono text-[11px] text-zinc-400 uppercase mb-1">Your Name / Organization</label>
+          <input type="text" required placeholder="e.g. Maya Chen / Nova Labs" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29] transition-colors placeholder:text-zinc-600">
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-zinc-400 uppercase mb-1">Primary Discipline Needed</label>
+          <select class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29] transition-colors">
+            <option>⚡ Bold Branding & Identity System</option>
+            <option>⚡ 3D Procedural Visuals & CGI</option>
+            <option>⚡ Digital Ad Campaign & Tech Merch</option>
+            <option>⚡ Full Creative Direction Retainer</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-zinc-400 uppercase mb-1">Project Details / Goals</label>
+          <textarea rows="3" required placeholder="What are your timeline, goals, and key deliverables?" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29] transition-colors placeholder:text-zinc-600"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-[#FF7A29] to-[#8B5CF6] text-white font-syne font-bold text-xs uppercase tracking-wider hover:opacity-95 transition-opacity shadow-glow-amber">
+          Submit Brief to Studio
+        </button>
+      </form>
+
+      <div id="form-feedback" class="hidden mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-center font-mono text-xs">
+        Brief received! Redirecting to WhatsApp desk...
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT: THREE.JS PARTICLE MORPH ENGINE & APP INTERACTIONS -->
+  <script>
+    /* =========================================================================
+       1. WEBGL PARTICLE SYSTEM WITH SCROLL MORPHING
+       ========================================================================= */
+    const canvas = document.getElementById('webgl-canvas');
+    const container = document.getElementById('canvas-container');
+    const hudStage = document.getElementById('hud-stage-name');
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 24;
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Particle Parameters
+    const PARTICLE_COUNT = 32000;
+    
+    // Arrays for Geometry Morph Targets
+    const posBox = new Float32Array(PARTICLE_COUNT * 3);      // State 0: The Art Box (Boîte)
+    const posChaos = new Float32Array(PARTICLE_COUNT * 3);    // State 1: Exploded Workplace / Chaos
+    const posBulb = new Float32Array(PARTICLE_COUNT * 3);     // State 2: Lightbulb / Insight
+    const posSphere = new Float32Array(PARTICLE_COUNT * 3);   // State 3: Global Collective Sphere
+
+    const currentPositions = new Float32Array(PARTICLE_COUNT * 3);
+    const particleColors = new Float32Array(PARTICLE_COUNT * 3);
+
+    // Color definitions (Gold/Amber, Neon Violet, Cyan, White)
+    const palette = [
+      new THREE.Color(0xFF7A29), // Brand Amber
+      new THREE.Color(0x8B5CF6), // Hyper Violet
+      new THREE.Color(0x06B6D4), // Cyan
+      new THREE.Color(0xFFFFFF), // Stark White
+      new THREE.Color(0xF59E0B)  // Gold
+    ];
+
+    // Procedural Shape Math Generation
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const i3 = i * 3;
+
+      // Assign random color from palette
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      particleColors[i3] = col.r;
+      particleColors[i3 + 1] = col.g;
+      particleColors[i3 + 2] = col.b;
+
+      // --- 1. SHAPE 0: THE "BOÎTE" (CUBE WIREFRAME + VOLUME) ---
+      const boxSize = 10;
+      // Distribute some onto cube edges and some within volume
+      if (Math.random() > 0.4) {
+        // Face points
+        const axis = Math.floor(Math.random() * 3);
+        const sign = Math.random() > 0.5 ? 1 : -1;
+        posBox[i3] = (axis === 0 ? sign : (Math.random() * 2 - 1)) * (boxSize / 2);
+        posBox[i3 + 1] = (axis === 1 ? sign : (Math.random() * 2 - 1)) * (boxSize / 2);
+        posBox[i3 + 2] = (axis === 2 ? sign : (Math.random() * 2 - 1)) * (boxSize / 2);
+      } else {
+        // Core interior
+        posBox[i3] = (Math.random() - 0.5) * boxSize * 0.9;
+        posBox[i3 + 1] = (Math.random() - 0.5) * boxSize * 0.9;
+        posBox[i3 + 2] = (Math.random() - 0.5) * boxSize * 0.9;
+      }
+
+      // --- 2. SHAPE 1: SCATTERED CHAOS FIELD ---
+      const radiusChaos = 25;
+      posChaos[i3] = (Math.random() - 0.5) * radiusChaos * 2.2;
+      posChaos[i3 + 1] = (Math.random() - 0.5) * radiusChaos * 1.8;
+      posChaos[i3 + 2] = (Math.random() - 0.5) * radiusChaos * 2.5;
+
+      // --- 3. SHAPE 2: LIGHTBULB / BRILLIANCE (Upper Sphere + Lower Stem) ---
+      if (Math.random() > 0.3) {
+        // Upper spherical head
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0) * 0.65; // upper hemisphere bias
+        const r = 5.5 * Math.cbrt(Math.random());
+        posBulb[i3] = r * Math.sin(phi) * Math.cos(theta);
+        posBulb[i3 + 1] = (r * Math.cos(phi)) + 1.2;
+        posBulb[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+      } else {
+        // Base / screw cylinder
+        const cylinderRadius = 2.0 * Math.sqrt(Math.random());
+        const cylinderAngle = Math.random() * Math.PI * 2;
+        posBulb[i3] = cylinderRadius * Math.cos(cylinderAngle);
+        posBulb[i3 + 1] = (Math.random() * -4.5) - 0.2;
+        posBulb[i3 + 2] = cylinderRadius * Math.sin(cylinderAngle);
+      }
+
+      // --- 4. SHAPE 3: GLOBAL SPHERE / WORLD OF WORK ---
+      const uS = Math.random();
+      const vS = Math.random();
+      const thetaS = uS * 2.0 * Math.PI;
+      const phiS = Math.acos(2.0 * vS - 1.0);
+      const rS = 6.8 * Math.cbrt(0.7 + 0.3 * Math.random());
+      posSphere[i3] = rS * Math.sin(phiS) * Math.cos(thetaS);
+      posSphere[i3 + 1] = rS * Math.cos(phiS);
+      posSphere[i3 + 2] = rS * Math.sin(phiS) * Math.sin(thetaS);
+
+      // Initial buffer position is Box
+      currentPositions[i3] = posBox[i3];
+      currentPositions[i3 + 1] = posBox[i3 + 1];
+      currentPositions[i3 + 2] = posBox[i3 + 2];
+    }
+
+    // Geometry & Buffer Attributes
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    // Custom Particle Texture (Sharp circular glow)
+    function createCircleTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const texture = new THREE.Texture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    const particleMaterial = new THREE.PointsMaterial({
+      size: 0.16,
+      vertexColors: true,
+      map: createCircleTexture(),
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particleSystem);
+
+    // Floating Neon Triangle Prisms (Replicating Dala background geometry)
+    const prismGroup = new THREE.Group();
+    const prismGeo = new THREE.ConeGeometry(0.7, 1.2, 3);
+    const prismMats = [
+      new THREE.MeshBasicMaterial({ color: 0xFF7A29, wireframe: true }),
+      new THREE.MeshBasicMaterial({ color: 0x8B5CF6, wireframe: true }),
+      new THREE.MeshBasicMaterial({ color: 0x06B6D4, wireframe: true })
+    ];
+
+    const PRISM_COUNT = 16;
+    const prisms = [];
+    for (let p = 0; p < PRISM_COUNT; p++) {
+      const mesh = new THREE.Mesh(prismGeo, prismMats[p % prismMats.length]);
+      mesh.position.set(
+        (Math.random() - 0.5) * 36,
+        (Math.random() - 0.5) * 28,
+        (Math.random() - 0.5) * 16 - 2
+      );
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+      const speed = {
+        rotX: (Math.random() - 0.5) * 0.015,
+        rotY: (Math.random() - 0.5) * 0.015,
+        vy: (Math.random() - 0.5) * 0.005
+      };
+      prismGroup.add(mesh);
+      prisms.push({ mesh, speed });
+    }
+    scene.add(prismGroup);
+
+    // Cursor tracking for mouse tilt & repulsion
+    const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    window.addEventListener('mousemove', (e) => {
+      mouse.targetX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    // Touch support for mobile parallax
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        mouse.targetX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+        mouse.targetY = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+      }
+    }, { passive: true });
+
+    // Scroll-driven calculation
+    let scrollFraction = 0;
+    function onScroll() {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0) {
+        scrollFraction = Math.min(Math.max(window.scrollY / docHeight, 0), 1);
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Helper: Linear Interpolation
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    // Main Animation Loop
+    let clock = new THREE.Clock();
+    
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = clock.getElapsedTime();
+
+      // Smooth mouse lerp
+      mouse.x += (mouse.targetX - mouse.x) * 0.05;
+      mouse.y += (mouse.targetY - mouse.y) * 0.05;
+
+      // Rotate whole particle system with mouse follow
+      particleSystem.rotation.y = time * 0.08 + mouse.x * 0.4;
+      particleSystem.rotation.x = Math.sin(time * 0.05) * 0.1 - mouse.y * 0.3;
+
+      // Animate ambient floating triangles
+      prisms.forEach(item => {
+        item.mesh.rotation.x += item.speed.rotX;
+        item.mesh.rotation.y += item.speed.rotY;
+        item.mesh.position.y += Math.sin(time + item.mesh.position.x) * 0.01;
+      });
+
+      // Calculate Morph Stage based on scrollFraction (0.0 to 1.0)
+      // 4 Stages: 
+      // 0.00 - 0.25: Cube -> Chaos
+      // 0.25 - 0.55: Chaos -> Lightbulb
+      // 0.55 - 0.85: Lightbulb -> Sphere
+      // 0.85 - 1.00: Sphere with high vibration (Gateway)
+
+      let targetA, targetB, localT;
+      let stageText = "THE ART BOX (CUBE)";
+
+      if (scrollFraction < 0.25) {
+        // Stage 0 -> 1 (Box to Chaos)
+        localT = scrollFraction / 0.25;
+        targetA = posBox;
+        targetB = posChaos;
+        stageText = localT < 0.5 ? "THE ART BOX (CUBE)" : "CREATIVE CHAOS";
+      } else if (scrollFraction < 0.55) {
+        // Stage 1 -> 2 (Chaos to Lightbulb)
+        localT = (scrollFraction - 0.25) / 0.30;
+        targetA = posChaos;
+        targetB = posBulb;
+        stageText = localT < 0.5 ? "CREATIVE CHAOS" : "LIGHTBULB MOMENT";
+      } else if (scrollFraction < 0.85) {
+        // Stage 2 -> 3 (Lightbulb to Sphere)
+        localT = (scrollFraction - 0.55) / 0.30;
+        targetA = posBulb;
+        targetB = posSphere;
+        stageText = localT < 0.5 ? "LIGHTBULB MOMENT" : "GLOBAL IMPACT SPHERE";
+      } else {
+        // Stage 3 (Final Sphere focus)
+        localT = (scrollFraction - 0.85) / 0.15;
+        targetA = posSphere;
+        targetB = posSphere;
+        stageText = "GLOBAL REACH • GATEWAY";
+      }
+
+      if (hudStage && hudStage.innerText !== stageText) {
+        hudStage.innerText = stageText;
+      }
+
+      // Smooth step easing for localT
+      const easeT = localT * localT * (3.0 - 2.0 * localT);
+
+      // Update particle positions buffer
+      const posAttr = particleGeometry.attributes.position;
+      const arr = posAttr.array;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const i3 = i * 3;
+
+        // Base interpolation
+        const xT = lerp(targetA[i3], targetB[i3], easeT);
+        const yT = lerp(targetA[i3 + 1], targetB[i3 + 1], easeT);
+        const zT = lerp(targetA[i3 + 2], targetB[i3 + 2], easeT);
+
+        // Organic micro-breathing noise
+        const microNoise = Math.sin(time * 2.0 + i) * 0.035;
+
+        arr[i3] = xT + microNoise;
+        arr[i3 + 1] = yT + microNoise;
+        arr[i3 + 2] = zT + microNoise;
+      }
+      posAttr.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+
+    // Window Resize Handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Start WebGL after window load
+    window.onload = function() {
+      animate();
+    };
+
+    /* =========================================================================
+       2. INTERACTIVE UI: PORTFOLIO CAROUSEL
+       ========================================================================= */
+    const track = document.getElementById('slider-track');
+    const prevBtn = document.getElementById('slider-prev');
+    const nextBtn = document.getElementById('slider-next');
+    let currentIndex = 0;
+
+    function updateSlider() {
+      const isMobile = window.innerWidth < 768;
+      const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+      const step = isMobile ? 100 : (isTablet ? 50 : 33.33);
+      track.style.transform = `translateX(-${currentIndex * step}%)`;
+    }
+
+    if (nextBtn && prevBtn) {
+      nextBtn.addEventListener('click', () => {
+        const maxIndex = window.innerWidth < 768 ? 3 : 2;
+        if (currentIndex < maxIndex) {
+          currentIndex++;
+        } else {
+          currentIndex = 0; // loop
+        }
+        updateSlider();
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+        } else {
+          const maxIndex = window.innerWidth < 768 ? 3 : 2;
+          currentIndex = maxIndex;
+        }
+        updateSlider();
+      });
+    }
+
+    /* =========================================================================
+       3. MODAL & INQUIRY ACTIONS
+       ========================================================================= */
+    const inquiryModal = document.getElementById('inquiry-modal');
+    const inquiryCard = document.getElementById('inquiry-modal-card');
+
+    function toggleInquiryModal(show) {
+      if (show) {
+        inquiryModal.classList.remove('opacity-0', 'pointer-events-none');
+        inquiryModal.classList.add('opacity-100', 'pointer-events-auto');
+        inquiryCard.classList.remove('scale-95');
+        inquiryCard.classList.add('scale-100');
+      } else {
+        inquiryModal.classList.remove('opacity-100', 'pointer-events-auto');
+        inquiryModal.classList.add('opacity-0', 'pointer-events-none');
+        inquiryCard.classList.remove('scale-100');
+        inquiryCard.classList.add('scale-95');
+      }
+    }
+
+    // Close on backdrop click
+    inquiryModal.addEventListener('click', (e) => {
+      if (e.target === inquiryModal) {
+        toggleInquiryModal(false);
+      }
+    });
+
+    // Form submission -> Redirects to pre-filled WhatsApp
+    function handleInquirySubmit(e) {
+      e.preventDefault();
+      const feedback = document.getElementById('form-feedback');
+      feedback.classList.remove('hidden');
+
+      setTimeout(() => {
+        toggleInquiryModal(false);
+        // Pre-filled WhatsApp link
+        window.open("https://wa.me/254700000000?text=Hi%20Boîte%20D'Art,%20I'm%20ready%20to%20collaborate%20on%20a%20brand%20project.", "_blank");
+      }, 1200);
+    }
+  </script>
+
+</body>
+</html>
