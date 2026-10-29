@@ -1,0 +1,12 @@
+{
+  "name": "box-of-art",
+  "version": "1.1.0",
+  "description": "Boîte D'Art - High performance creative studio portfolio",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}
