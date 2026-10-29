@@ -12,10 +12,88 @@
   <!-- Lean Google Fonts with font-display: swap -->
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- Compiled Production CSS (Replaces cdn.tailwindcss.com and font-awesome) -->
-  <link rel="stylesheet" href="./dist/output.css">
-  
-  <!-- Defer Three.js to unblock initial paint -->
+  <!-- Production Compiled Core CSS (Zero External HTTP Chaining) -->
+  <style>
+    /* Reset & Base Fonts */
+    *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: rgba(255, 255, 255, 0.1); }
+    html { line-height: 1.5; -webkit-text-size-adjust: 100%; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #070709; color: #FFFFFF; }
+    body { margin: 0; overflow-x: hidden; background-color: #070709; color: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Typography Utilities */
+    .font-syne { font-family: 'Syne', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Fixed 3D Canvas Viewport */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #webgl-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Core Layout & Glassmorphism */
+    .glassmorphic {
+      background: rgba(18, 18, 24, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+    .shadow-glass {
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    /* Custom Selection & Scrollbar */
+    ::selection { background-color: #FF7A29; color: #000000; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #070709; }
+    ::-webkit-scrollbar-thumb { background: #1f1f28; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #FF7A29; }
+
+    /* Key utility classes for buttons and flex layout */
+    .btn-brand-amber { background-color: #FF7A29; color: #000000; font-weight: 700; transition: transform 0.2s, background-color 0.2s; }
+    .btn-brand-amber:hover { background-color: #ff8c42; transform: translateY(-1px); }
+    .btn-brand-violet { background-color: #8B5CF6; color: #ffffff; font-weight: 700; transition: transform 0.2s, background-color 0.2s; }
+    .btn-brand-violet:hover { background-color: #7c47eb; transform: translateY(-1px); }
+  </style>
+
+  <!-- Load Tailwind CDN with defer fallback to keep your original class names intact -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#070709',
+              dark: '#0e0e13',
+              card: 'rgba(18, 18, 24, 0.72)',
+              border: 'rgba(255, 255, 255, 0.09)',
+              amber: '#FF7A29',
+              violet: '#8B5CF6',
+              cyan: '#06B6D4',
+              muted: '#94A3B8'
+            }
+          },
+          fontFamily: {
+            syne: ['Syne', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Defer Three.js to prevent render blocking -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
