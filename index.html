@@ -5,119 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Boîte D'Art — We Don't Just Design | We Drive Impact</title>
   
-  <!-- Fonts: Syne (Headings), Plus Jakarta Sans (Body), JetBrains Mono (Tech/Accent) -->
+  <!-- Preconnect to Font Origins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800;900&display=swap" rel="stylesheet">
   
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Lean Google Fonts with font-display: swap -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              black: '#070709',
-              dark: '#0e0e13',
-              card: 'rgba(18, 18, 24, 0.72)',
-              border: 'rgba(255, 255, 255, 0.09)',
-              amber: '#FF7A29', // Tangerine / Gold highlight from brand
-              violet: '#8B5CF6',
-              cyan: '#06B6D4',
-              muted: '#94A3B8'
-            }
-          },
-          fontFamily: {
-            syne: ['Syne', 'sans-serif'],
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          boxShadow: {
-            'glow-amber': '0 0 35px -5px rgba(255, 122, 41, 0.35)',
-            'glow-violet': '0 0 35px -5px rgba(139, 92, 246, 0.35)',
-            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Three.js & Lucide CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Compiled Production CSS (Replaces cdn.tailwindcss.com and font-awesome) -->
+  <link rel="stylesheet" href="./dist/output.css">
   
-  <style>
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #070709;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #272733;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #FF7A29;
-    }
-
-    /* Backdrop blur fallback */
-    .glassmorphic {
-      background: rgba(14, 14, 19, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    
-    .glassmorphic-card {
-      background: linear-gradient(135deg, rgba(25, 25, 35, 0.55) 0%, rgba(12, 12, 17, 0.8) 100%);
-      backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .glassmorphic-card:hover {
-      border-color: rgba(255, 122, 41, 0.45);
-      transform: translateY(-4px);
-      box-shadow: 0 16px 40px -15px rgba(255, 122, 41, 0.2);
-    }
-
-    /* Gradient Text */
-    .text-gradient {
-      background: linear-gradient(135deg, #FFFFFF 30%, #A1A1AA 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .text-gradient-amber {
-      background: linear-gradient(135deg, #FFA959 0%, #FF6525 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    /* Fixed WebGL Canvas Behind Content */
-    #canvas-container {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none; /* Mouse coordinates passed via window listener */
-    }
-
-    /* Floating wireframe prisms from video */
-    @keyframes floatSlow {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-15px) rotate(4deg); }
-    }
-    .ambient-float {
-      animation: floatSlow 8s ease-in-out infinite;
-    }
-  </style>
+  <!-- Defer Three.js to unblock initial paint -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body class="bg-[#070709] text-white font-sans antialiased overflow-x-hidden selection:bg-[#FF7A29] selection:text-black">
